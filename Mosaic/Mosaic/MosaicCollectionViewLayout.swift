@@ -144,8 +144,6 @@ class MosaicCollectionViewLayout: UICollectionViewLayout {
   }
 
   func rectForThumbAtIndex(_ i: Int) -> CGRect? {
-    createSizeLookup()
-
     if i > thumbRectPlaceholders.count-1 {
       return nil
     }

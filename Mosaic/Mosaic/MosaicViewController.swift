@@ -36,7 +36,7 @@ extension MosaicViewController: UICollectionViewDataSource {
     let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MosaicCollectionViewCell.identifier, for: indexPath) as! MosaicCollectionViewCell
 
     let imageLoader = ImageLoader()
-    imageLoader.delegate = cell
+    cell.imageLoader = imageLoader
     imageLoader.loadCat(atIndexPath: indexPath)
 
     return cell

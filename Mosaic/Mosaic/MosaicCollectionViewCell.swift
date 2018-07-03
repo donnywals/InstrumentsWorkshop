@@ -4,6 +4,11 @@ class MosaicCollectionViewCell: UICollectionViewCell {
   static let identifier = String(describing: MosaicCollectionViewCell.self)
 
   let imageView = UIImageView()
+  var imageLoader: ImageLoader? {
+    didSet {
+      imageLoader?.delegate = self
+    }
+  }
 
   required init?(coder aDecoder: NSCoder) {
     fatalError("Not implemented")
@@ -15,12 +20,19 @@ class MosaicCollectionViewCell: UICollectionViewCell {
     imageView.translatesAutoresizingMaskIntoConstraints = false
     contentView.addSubview(imageView)
     imageView.backgroundColor = .red
+    imageView.contentMode = .scaleAspectFill
+    imageView.clipsToBounds = true
 
     NSLayoutConstraint.activate([
       imageView.topAnchor.constraint(equalTo: topAnchor),
       imageView.rightAnchor.constraint(equalTo: rightAnchor),
       imageView.bottomAnchor.constraint(equalTo: bottomAnchor),
       imageView.leftAnchor.constraint(equalTo: leftAnchor)])
+  }
+
+  override func prepareForReuse() {
+    imageView.image = nil
+    imageLoader?.cancel()
   }
 }
 
