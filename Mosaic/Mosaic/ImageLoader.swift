@@ -28,6 +28,7 @@ class ImageLoader {
           return
       }
 
+      ImageCache.addImage(image, forKey: location)
       self.delegate?.imageLoader(self, didLoadImage: image)
     }
 
