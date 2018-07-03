@@ -1,19 +1,51 @@
 import UIKit
+import os.signpost
 
 protocol ImageLoaderDelegate: class {
   func imageLoader(_ loader: ImageLoader, didLoadImage image: UIImage)
   func imageLoader(_ loader: ImageLoader, failedLoadWithError error: Error)
 }
 
-class ImageLoader {
+fileprivate let imageLogger = OSLog(subsystem: "com.mosaic", category: "ImageLoader")
+fileprivate let imageEventLogger = OSLog(subsystem: "com.mosaic", category: .pointsOfInterest)
+
+class ImageLoaderQueue {
+  static let shared = ImageLoaderQueue()
+
+  var loaders = Set<ImageLoader>()
+
+  func enqueue(_ loader: ImageLoader) {
+    loaders.insert(loader)
+  }
+
+  func remove(_ loader: ImageLoader) {
+    loaders.remove(loader)
+  }
+}
+
+class ImageLoader: NSObject {
   weak var delegate: ImageLoaderDelegate?
   var currentTask: URLSessionDataTask?
 
+  var signpostID: OSSignpostID {
+    return OSSignpostID(log: imageLogger, object: self)
+  }
+
+  deinit {
+    cancel()
+  }
+
   func loadCat(atIndexPath indexPath: IndexPath) {
+    ImageLoaderQueue.shared.enqueue(self)
     let location = "https://cataas.com/cat?idx=s\(indexPath.section)r\(indexPath.row)"
+
+    os_signpost(type: .begin, log: imageLogger, name: "Image download",
+                signpostID: signpostID, "Download started")
 
     if let image = ImageCache.getImageForKey(location) {
       delegate?.imageLoader(self, didLoadImage: image)
+      os_signpost(type: .end, log: imageLogger, name: "Image download",
+                  signpostID: signpostID, "Download completed through cache hit")
       return
     }
 
@@ -23,7 +55,13 @@ class ImageLoader {
         return
       }
 
+      defer {
+        ImageLoaderQueue.shared.remove(strongSelf)
+      }
+
       if let error = error {
+        os_signpost(type: .end, log: imageLogger, name: "Image download",
+                    signpostID: strongSelf.signpostID, "Download failed with error %s", error.localizedDescription)
         strongSelf.delegate?.imageLoader(strongSelf, failedLoadWithError: error)
       }
 
@@ -32,6 +70,8 @@ class ImageLoader {
           return
       }
 
+      os_signpost(type: .end, log: imageLogger, name: "Image download",
+                  signpostID: strongSelf.signpostID, "Download completed through network")
       ImageCache.addImage(image, forKey: location)
       strongSelf.delegate?.imageLoader(strongSelf, didLoadImage: image)
     }
@@ -40,8 +80,8 @@ class ImageLoader {
   }
 
   func cancel() {
+    currentTask?.suspend()
     currentTask?.cancel()
-    currentTask = nil
   }
 }
 
