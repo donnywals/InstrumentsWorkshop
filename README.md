@@ -7,3 +7,7 @@ In this repository, you'll find some samples that you can use to help you practi
 
 This app has about as many memory leaks and mistakes as it has kitten pics. Go find all of the problems and fix them using Instruments.
 Also, add some signposts to gain insights into what is going on under the hood!
+
+## Parser
+
+This is the demo app that is used to demonstrate instruments tools with.
